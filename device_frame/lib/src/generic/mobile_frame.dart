@@ -105,12 +105,9 @@ class MobileDeviceFrame extends StatelessWidget {
           child: AnimatedCrossFade(
             firstChild: SizedBox(),
             secondChild: VirtualKeyboard(
-              height:
-                  VirtualKeyboard.minHeight + childMediaQuery.padding.bottom,
+              height: VirtualKeyboard.minHeight + childMediaQuery.padding.bottom,
             ),
-            crossFadeState: isKeyboardVisible
-                ? CrossFadeState.showSecond
-                : CrossFadeState.showFirst,
+            crossFadeState: isKeyboardVisible ? CrossFadeState.showSecond : CrossFadeState.showFirst,
             duration: keyboardTransitionDuration,
           ),
         ),
@@ -178,13 +175,10 @@ class MobileDeviceFrame extends StatelessWidget {
     properties.add(DiagnosticsProperty<DeviceFrameStyle>('style', style));
     properties.add(DiagnosticsProperty<double>('borderSize', borderSize));
     properties.add(DiagnosticsProperty<DeviceNotch>('notch', notch));
-    properties
-        .add(DiagnosticsProperty<Orientation>('orientation', orientation));
+    properties.add(DiagnosticsProperty<Orientation>('orientation', orientation));
     properties.add(DiagnosticsProperty<BorderRadius>('edgeRadius', edgeRadius));
-    properties
-        .add(DiagnosticsProperty<BorderRadius>('screenRadius', screenRadius));
-    properties.add(DiagnosticsProperty<List<DeviceSideButton>>(
-        'sideButtons', sideButtons));
+    properties.add(DiagnosticsProperty<BorderRadius>('screenRadius', screenRadius));
+    properties.add(DiagnosticsProperty<List<DeviceSideButton>>('sideButtons', sideButtons));
   }
 }
 
@@ -215,8 +209,7 @@ class _DeviceFramePainter extends CustomPainter {
       ..addRRect(
         RRect.fromRectAndCorners(
           Offset(device.body.left, device.body.top) &
-              Size(size.width - device.body.left - device.body.right,
-                  size.height - device.body.top - device.body.bottom),
+              Size(size.width - device.body.left - device.body.right, size.height - device.body.top - device.body.bottom),
           topLeft: device.screenRadius.topLeft,
           topRight: device.screenRadius.topRight,
           bottomLeft: device.screenRadius.bottomLeft,
@@ -299,19 +292,17 @@ class _DeviceFramePainter extends CustomPainter {
   }
 
   Path _createNotchPath(Size size) {
-    final notchRect = Offset(
-            (size.width / 2) - (device.notch.width / 2), device.body.top - 1) &
+    final notchRect = Offset((size.width / 2) - (device.notch.width / 2), device.body.top - 1) &
         Size(
           device.notch.width,
           device.notch.height + 1,
         );
 
-    final leftCornerMiniRect =
-        Offset(notchRect.left - device.notch.joinRadius.x, notchRect.top) &
-            Size(
-              device.notch.joinRadius.x,
-              device.notch.joinRadius.x,
-            );
+    final leftCornerMiniRect = Offset(notchRect.left - device.notch.joinRadius.x, notchRect.top) &
+        Size(
+          device.notch.joinRadius.x,
+          device.notch.joinRadius.x,
+        );
     final leftCorner = Path.combine(
       PathOperation.difference,
       Path()..addRect(leftCornerMiniRect),
@@ -324,8 +315,7 @@ class _DeviceFramePainter extends CustomPainter {
         ),
     );
 
-    final rightCornerMiniRect = Offset(notchRect.right, notchRect.top) &
-        Size(device.notch.joinRadius.x, device.notch.joinRadius.x);
+    final rightCornerMiniRect = Offset(notchRect.right, notchRect.top) & Size(device.notch.joinRadius.x, device.notch.joinRadius.x);
     final rightCorner = Path.combine(
       PathOperation.difference,
       Path()..addRect(rightCornerMiniRect),
@@ -362,45 +352,48 @@ class _DeviceFramePainter extends CustomPainter {
 
     if (device.orientation == Orientation.landscape) {
       size = Size(
-        device.mediaQueryData.size.height +
-            device.body.left +
-            device.body.right,
+        device.mediaQueryData.size.height + device.body.left + device.body.right,
         device.mediaQueryData.size.width + device.body.top + device.body.bottom,
       );
 
-      final transform = Matrix4.rotationZ(math.pi * 0.5) *
-          Matrix4.translationValues(0.0, -size.height, 0.0);
+      final transform = Matrix4.rotationZ(math.pi * 0.5) * Matrix4.translationValues(0.0, -size.height, 0.0);
       canvas.transform(transform.storage);
     } else {
       size = Size(
         device.mediaQueryData.size.width + device.body.left + device.body.right,
-        device.mediaQueryData.size.height +
-            device.body.top +
-            device.body.bottom,
+        device.mediaQueryData.size.height + device.body.top + device.body.bottom,
       );
     }
 
     final body = _createBodyPath(size);
     var screen = _createScreenPath(size);
 
-    if (device.notch != null && device.notch.width > 0) {
-      final notchPath = _createNotchPath(size);
-      screen = Path.combine(
-        PathOperation.difference,
-        screen,
-        notchPath,
-      );
+    if (!kIsWeb) {
+      if (device.notch != null && device.notch.width > 0) {
+        final notchPath = _createNotchPath(size);
+        screen = Path.combine(
+          PathOperation.difference,
+          screen,
+          notchPath,
+        );
+      }
     }
 
-    final bodyWithoutScreen =
-        Path.combine(PathOperation.difference, body, screen);
+    final bodyWithoutScreen = kIsWeb ? body : Path.combine(PathOperation.difference, body, screen);
 
     canvas.drawPath(
-      bodyWithoutScreen,
-      Paint()
-        ..style = PaintingStyle.fill
-        ..color = style.bodyColor,
-    );
+        bodyWithoutScreen,
+        Paint()
+          ..style = PaintingStyle.fill
+          ..color = style.bodyColor);
+
+    if (kIsWeb) {
+      canvas.drawPath(
+          screen,
+          Paint()
+            ..style = PaintingStyle.fill
+            ..blendMode = BlendMode.dstOut);
+    }
 
     canvas.drawPath(
       body,
@@ -458,35 +451,19 @@ class DeviceSideButton {
     @required this.radius,
   });
 
-  const DeviceSideButton.left(
-      {@required double fromTop,
-      @required this.size,
-      @required this.thickness,
-      this.radius = const Radius.circular(4)})
+  const DeviceSideButton.left({@required double fromTop, @required this.size, @required this.thickness, this.radius = const Radius.circular(4)})
       : edge = DeviceEdge.left,
         position = fromTop;
 
-  const DeviceSideButton.top(
-      {double fromLeft,
-      @required this.size,
-      @required this.thickness,
-      this.radius = const Radius.circular(4)})
+  const DeviceSideButton.top({double fromLeft, @required this.size, @required this.thickness, this.radius = const Radius.circular(4)})
       : edge = DeviceEdge.top,
         position = fromLeft;
 
-  const DeviceSideButton.right(
-      {@required double fromTop,
-      @required this.size,
-      @required this.thickness,
-      this.radius = const Radius.circular(4)})
+  const DeviceSideButton.right({@required double fromTop, @required this.size, @required this.thickness, this.radius = const Radius.circular(4)})
       : edge = DeviceEdge.right,
         position = fromTop;
 
-  const DeviceSideButton.bottom(
-      {@required double fromLeft,
-      @required this.size,
-      @required this.thickness,
-      this.radius = const Radius.circular(4)})
+  const DeviceSideButton.bottom({@required double fromLeft, @required this.size, @required this.thickness, this.radius = const Radius.circular(4)})
       : edge = DeviceEdge.bottom,
         position = fromLeft;
 }
